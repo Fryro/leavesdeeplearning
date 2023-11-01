@@ -79,14 +79,21 @@ def analyze_models(output_dir):
     histories = []
     for model_name in os.listdir(output_dir):
         model_dir = os.path.join(output_dir, model_name)
-        print(model_dir)
+        #print("Current Model: {}".format(model_dir))
         # make CSV with results
         params_file = os.path.join(model_dir, 'params.json')
         if not os.path.isfile(params_file):
             print(f'Warning: {params_file} does not exist.')
             continue
         with open(params_file, 'r') as fp:
-            params = json.load(fp)
+            #print("Current params file: {}".format(params_file))
+            raw_str = fp.read()
+            params = json.loads(raw_str)
+            #params = json.load(fp)
+            
+            #print(type(params))
+            #print(params)
+            #print(params.keys())
             results = params['results']
             history = results['history']
             del params['results']
@@ -197,7 +204,7 @@ def grid_search(data_path, output_dir):
         early_stopping = EarlyStopping(monitor='val_loss', verbose=1, **params['early_stopping_params'])
 
         # Reduces learning rate if plateua is detected.
-        reduce_lr = ReduceLROnPlateau(monitor='val_loss', patience=100, factor=0.2, min_lr=0.001)
+        #reduce_lr = ReduceLROnPlateau(monitor='val_loss', patience=100, factor=0.2, min_lr=0.001)
 
         # to make it easier to remember the best model we'll use a random name
         random_name = '_'.join(words.sample(n=2))
@@ -209,7 +216,7 @@ def grid_search(data_path, output_dir):
             filepath=os.path.join(output_path, 'model.h5'),  # always overwrite the existing model
             save_weights_only=False, save_freq='epoch',
             save_best_only=True, monitor='val_loss', verbose=1)  # only save models that improve the 'monitored' value
-        callbacks = [early_stopping, model_checkpoint, reduce_lr]
+        callbacks = [early_stopping, model_checkpoint]#, reduce_lr]
 
         # build model using build_fn_kwargs
         model = build_fn(input_shape=input_shape, metrics=['accuracy'], **params['build_fn_params'])
@@ -232,11 +239,13 @@ def grid_search(data_path, output_dir):
         }
         print('params:', params)
 
+        print('name:', params['results']['name'])
         # save params in model directory
         params_file = os.path.join(output_path, 'params.json')
         with open(params_file, 'w') as fp:
-            json.dump(params.item(), fp)
-            #json.dump(params, fp)
+            #json.dump(params.items(), fp)
+            #json.dump(str(params), fp)
+            json.dump(params, fp)
 
 if __name__ == '__main__':
     # output_dir, data_path = 'lotus_leaves_1', 'groups/lotus corniculatus l vs viola tricolor l'
@@ -256,7 +265,10 @@ if __name__ == '__main__':
     # Group Problem
     grid_search(paths_dict['group'][0], paths_dict['group'][1])
     analyze_models(paths_dict['group'][1])
+    # best: relu, 128 batch, grayscale, 64x64
+
 
     # Personal Problem
     grid_search(paths_dict['personal'][0], paths_dict['personal'][1])
     analyze_models(paths_dict['personal'][1])
+    # best: relu, 64 batch, grayscale, 128x128

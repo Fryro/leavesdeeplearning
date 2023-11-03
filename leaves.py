@@ -199,6 +199,7 @@ def grid_search(data_path, output_dir):
         # create train and validation dataset using dataset_params
         train_ds = image_dataset_from_directory(os.path.join(data_path, 'train'), **params['dataset_params'])
         valid_ds = image_dataset_from_directory(os.path.join(data_path, 'valid'), **params['dataset_params'])
+        #print("\n\t {}\n\t".format(str(params['dataset_params'])))
 
         # create early stopping with early stopping parameters
         early_stopping = EarlyStopping(monitor='val_loss', verbose=1, **params['early_stopping_params'])
@@ -247,6 +248,58 @@ def grid_search(data_path, output_dir):
             #json.dump(str(params), fp)
             json.dump(params, fp)
 
+
+def make_specific(input_shape, hidden_activation, output_activation, loss, optimizer, metrics):
+    clear_session()
+    
+    model = Sequential([
+        Input(shape = input_shape),
+        Rescaling(1/255),
+        Conv2D(16, 3, activation = hidden_activation),
+        Conv2D(8, 3, activation = hidden_activation),
+        MaxPooling2D(pool_size = (2,2)),
+        Conv2D(4, 3, activation = hidden_activation),
+        Conv2D(2, 3, activation = hidden_activation),
+        Flatten(),
+        Dense(1, activation = output_activation)
+    ])
+    model.summary()
+    model.compile(loss = loss, optimizer = optimizer, metrics = metrics)
+    return model
+
+
+
+
+
+def fit_specific(data_path, output_dir, image_size, batch_size, color_mode, interpolation, ctar, model):
+    train_ds = image_dataset_from_directory(os.path.join(data_path, 'train'), label_mode = 'binary', image_size = image_size, batch_size = batch_size, color_mode = color_mode, interpolation = interpolation, crop_to_aspect_ratio = ctar)
+    valid_ds = image_dataset_from_directory(os.path.join(data_path, 'valid'), label_mode = 'binary', image_size = image_size, batch_size = batch_size, color_mode = color_mode, interpolation = interpolation, crop_to_aspect_ratio = ctar)
+
+    early_stopping = EarlyStopping(monitor = 'val_loss', verbose = 1, patience = 50)
+    reduce_lr = ReduceLROnPlateau(monitor = 'val_loss', verbose = 1, patience = 40, factor = 0.2, min_lr = 0.001)
+    
+    output_name = 'specific'
+    output_path = os.path.join(output_dir, output_name)
+    os.makedirs(output_path, exist_ok = True)
+
+    model_checkpoint = ModelCheckpoint(
+        filepath = os.path.join(output_path, 'model.h5'),
+        save_weights_only = False,
+        save_freq = 'epoch',
+        save_best_only = True,
+        monitor = 'val_loss',
+        verbose = 1
+    )
+    callbacks = [early_stopping, model_checkpoint, reduce_lr]
+
+    t0 = time.time()
+    history = model.fit(train_ds, validation_data = valid_ds, callbacks = callbacks, epochs = 10**10) 
+    t1 = time.time()
+
+
+
+
+
 if __name__ == '__main__':
     # output_dir, data_path = 'lotus_leaves_1', 'groups/lotus corniculatus l vs viola tricolor l'
     group_problem = 'anthyllis vulneraria l vs mentha aquatica l' # Group
@@ -263,12 +316,21 @@ if __name__ == '__main__':
     }
 
     # Group Problem
-    grid_search(paths_dict['group'][0], paths_dict['group'][1])
-    analyze_models(paths_dict['group'][1])
+    #grid_search(paths_dict['group'][0], paths_dict['group'][1])
+    #analyze_models(paths_dict['group'][1])
     # best: relu, 128 batch, grayscale, 64x64
-
+    group_model = make_specific((64, 64, 1), 'relu', 'sigmoid', 'binary_crossentropy', 'adam', ['accuracy'])
+    fit_specific(paths_dict['group'][0], paths_dict['group'][1], (64, 64), 128, 'grayscale', 'bilinear', False, group_model)
 
     # Personal Problem
-    grid_search(paths_dict['personal'][0], paths_dict['personal'][1])
-    analyze_models(paths_dict['personal'][1])
+    #grid_search(paths_dict['personal'][0], paths_dict['personal'][1])
+    #analyze_models(paths_dict['personal'][1])
     # best: relu, 64 batch, grayscale, 128x128
+    personal_model = make_specific((128, 128, 1), 'relu', 'sigmoid', 'binary_crossentropy', 'adam', ['accuracy'])
+    fit_specific(paths_dict['personal'][0], paths_dict['personal'][1], (128, 128), 64, 'grayscale', 'bilinear', False, group_model)
+
+
+
+
+
+

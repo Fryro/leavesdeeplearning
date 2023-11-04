@@ -310,9 +310,12 @@ if __name__ == '__main__':
     output_dir_group = "./output/" + group_problem
     output_dir_personal = "./output/" + personal_problem
     
+    submission_dir_group = "./submissions/" + group_problem
+    submission_dir_personal = "./submissions/" + personal_problem
+
     paths_dict = {
-        "group": [data_path_group, output_dir_group],
-        "personal": [data_path_personal, output_dir_personal]
+        "group": [data_path_group, output_dir_group, submission_dir_group],
+        "personal": [data_path_personal, output_dir_personal, submission_dir_personal]
     }
 
     # Group Problem
@@ -320,14 +323,14 @@ if __name__ == '__main__':
     #analyze_models(paths_dict['group'][1])
     # best: relu, 128 batch, grayscale, 64x64
     group_model = make_specific((64, 64, 1), 'relu', 'sigmoid', 'binary_crossentropy', 'adam', ['accuracy'])
-    fit_specific(paths_dict['group'][0], paths_dict['group'][1], (64, 64), 128, 'grayscale', 'bilinear', False, group_model)
+    fit_specific(paths_dict['group'][0], paths_dict['group'][2], (64, 64), 128, 'grayscale', 'bilinear', False, group_model)
 
     # Personal Problem
     #grid_search(paths_dict['personal'][0], paths_dict['personal'][1])
     #analyze_models(paths_dict['personal'][1])
     # best: relu, 64 batch, grayscale, 128x128
     personal_model = make_specific((128, 128, 1), 'relu', 'sigmoid', 'binary_crossentropy', 'adam', ['accuracy'])
-    fit_specific(paths_dict['personal'][0], paths_dict['personal'][1], (128, 128), 64, 'grayscale', 'bilinear', False, group_model)
+    fit_specific(paths_dict['personal'][0], paths_dict['personal'][2], (128, 128), 64, 'grayscale', 'bilinear', False, personal_model)
 
 
 

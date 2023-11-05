@@ -280,6 +280,7 @@ def fit_specific(data_path, output_dir, image_size, batch_size, color_mode, inte
     
     output_name = 'specific'
     output_path = os.path.join(output_dir, output_name)
+    output_path = output_dir
     os.makedirs(output_path, exist_ok = True)
 
     model_checkpoint = ModelCheckpoint(

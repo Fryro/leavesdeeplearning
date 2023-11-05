@@ -163,28 +163,79 @@ def grid_search(data_path, output_dir):
     words = pd.read_csv('eff_large_wordlist.txt', sep='\t', names=['roll', 'word'])['word']
 
     # define parameter grid here
-    parameter_grids = {
-        'dataset_params': ParameterGrid({
-            'label_mode': ['binary'],
-            'image_size': [(2**p, 2**p) for p in range(5, 9)],
-            'batch_size': [2**p for p in range(5, 8)],
-            'color_mode': ['grayscale', 'rgb'],
-            'interpolation': ['bilinear'],
-            'crop_to_aspect_ratio': [False],
-        }),
-        'build_fn_params': ParameterGrid({
-            'optimizer': ['adam'],
-            'loss': ['binary_crossentropy'],
-            'output_activation': ['sigmoid'],
-            'hidden_activation': ['relu', 'selu', 'swish'],
-        }),
-        'fit_params': ParameterGrid({
-            'epochs': [10**10],  # must be integers
-        }),
-        'early_stopping_params': ParameterGrid({
-            'patience': [50],
-        })
-    }
+    if ('anthyllis' in output_dir):
+        # Group 
+        parameter_grids = {
+            'dataset_params': ParameterGrid({
+                'label_mode': ['binary'],
+                'image_size': [(64, 64)],
+                'batch_size': [128],
+                'color_mode': ['grayscale'],
+                'interpolation': ['bilinear'],
+                'crop_to_aspect_ratio': [False],
+            }),
+            'build_fn_params': ParameterGrid({
+                'optimizer': ['adam'],
+                'loss': ['binary_crossentropy'],
+                'output_activation': ['sigmoid'],
+                'hidden_activation': ['relu'],
+            }),
+            'fit_params': ParameterGrid({
+                'epochs': [10**10],  # must be integers
+            }),
+            'early_stopping_params': ParameterGrid({
+                'patience': [50],
+            })
+        }
+        
+    elif ('dryopteris' in output_dir):
+        # Personal
+        parameter_grids = {
+            'dataset_params': ParameterGrid({
+                'label_mode': ['binary'],
+                'image_size': [(128, 128)], 
+                'batch_size': [64],
+                'color_mode': ['grayscale'],
+                'interpolation': ['bilinear'],
+                'crop_to_aspect_ratio': [False],
+            }),
+            'build_fn_params': ParameterGrid({
+                'optimizer': ['adam'],
+                'loss': ['binary_crossentropy'],
+                'output_activation': ['sigmoid'],
+                'hidden_activation': ['relu'],
+            }),
+            'fit_params': ParameterGrid({
+                'epochs': [10**10],  # must be integers
+            }),
+            'early_stopping_params': ParameterGrid({
+                'patience': [50],
+            })
+        }
+
+    else:
+        parameter_grids = {
+            'dataset_params': ParameterGrid({
+                'label_mode': ['binary'],
+                'image_size': [(2**p, 2**p) for p in range(5, 9)],
+                'batch_size': [2**p for p in range(5, 8)],
+                'color_mode': ['grayscale', 'rgb'],
+                'interpolation': ['bilinear'],
+                'crop_to_aspect_ratio': [False],
+            }),
+            'build_fn_params': ParameterGrid({
+                'optimizer': ['adam'],
+                'loss': ['binary_crossentropy'],
+                'output_activation': ['sigmoid'],
+                'hidden_activation': ['relu'],
+            }),
+            'fit_params': ParameterGrid({
+                'epochs': [10**10],  # must be integers
+            }),
+            'early_stopping_params': ParameterGrid({
+                'patience': [50],
+            })
+        }
 
     for params in itertools.product(*list(parameter_grids.values())):
         # store parameters in dictionary, one item per process
@@ -247,7 +298,6 @@ def grid_search(data_path, output_dir):
             #json.dump(params.items(), fp)
             #json.dump(str(params), fp)
             json.dump(params, fp)
-
 
 def make_specific(input_shape, hidden_activation, output_activation, loss, optimizer, metrics):
     clear_session()
@@ -320,18 +370,18 @@ if __name__ == '__main__':
     }
 
     # Group Problem
-    #grid_search(paths_dict['group'][0], paths_dict['group'][1])
+    grid_search(paths_dict['group'][0], paths_dict['group'][2])
     #analyze_models(paths_dict['group'][1])
     # best: relu, 128 batch, grayscale, 64x64
-    group_model = make_specific((64, 64, 1), 'relu', 'sigmoid', 'binary_crossentropy', 'adam', ['accuracy'])
-    fit_specific(paths_dict['group'][0], paths_dict['group'][2], (64, 64), 128, 'grayscale', 'bilinear', False, group_model)
+    #group_model = make_specific((64, 64, 1), 'relu', 'sigmoid', 'binary_crossentropy', 'adam', ['accuracy'])
+    #fit_specific(paths_dict['group'][0], paths_dict['group'][2], (64, 64), 128, 'grayscale', 'bilinear', False, group_model)
 
     # Personal Problem
-    #grid_search(paths_dict['personal'][0], paths_dict['personal'][1])
+    grid_search(paths_dict['personal'][0], paths_dict['personal'][2])
     #analyze_models(paths_dict['personal'][1])
     # best: relu, 64 batch, grayscale, 128x128
-    personal_model = make_specific((128, 128, 1), 'relu', 'sigmoid', 'binary_crossentropy', 'adam', ['accuracy'])
-    fit_specific(paths_dict['personal'][0], paths_dict['personal'][2], (128, 128), 64, 'grayscale', 'bilinear', False, personal_model)
+    #personal_model = make_specific((128, 128, 1), 'relu', 'sigmoid', 'binary_crossentropy', 'adam', ['accuracy'])
+    #fit_specific(paths_dict['personal'][0], paths_dict['personal'][2], (128, 128), 64, 'grayscale', 'bilinear', False, personal_model)
 
 
 
